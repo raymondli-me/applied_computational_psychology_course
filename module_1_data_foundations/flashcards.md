@@ -83,10 +83,12 @@
 
 ---
 
-## Code Patterns (5 cards)
+## Code Patterns - Preview for Module 2 (5 cards)
+
+*Note: Module 1 uses Google Sheets. These Python patterns prepare you for Module 2.*
 
 ### Card 15
-**Front:** How do you load a course dataset in Python?
+**Front:** How do you load a course dataset in Python? (Module 2+)
 **Back:**
 ```python
 df = load_dataset("dataset_name", nrows=5000)
