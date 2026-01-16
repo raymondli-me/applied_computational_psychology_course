@@ -3,7 +3,7 @@
 ## Lab Overview
 **Duration:** 60 minutes
 **Tools Required:** Google Sheets (free with Google account)
-**Dataset:** Andrea's Reddit Data (from course dataset bank)
+**Dataset:** Andrea's Reddit Data (2,000 row sample - wedding conflicts from r/AmItheAsshole)
 
 ---
 
@@ -27,10 +27,10 @@ By the end of this lab, you will:
 
 ### Step 2: Import the Dataset from Course Data Bank
 
-Google Sheets can import data directly from a URL. Use this link to Andrea's Reddit data:
+Google Sheets can import data directly from a URL. Use this link to Andrea's Reddit data (2,000 row sample):
 
 ```
-https://storage.googleapis.com/variable-resolution-applied-computational-psychology-course/datasets/csv/andrea_reddit_results_andrea_2025_03_13.csv
+https://storage.googleapis.com/variable-resolution-applied-computational-psychology-course/datasets/csv/andrea_sample_2k_for_sheets.csv
 ```
 
 **To import:**
@@ -38,10 +38,10 @@ https://storage.googleapis.com/variable-resolution-applied-computational-psychol
 2. Click the **"Upload"** tab, then click **"Browse"**
 3. OR use **IMPORTDATA function** in cell A1:
    ```
-   =IMPORTDATA("https://storage.googleapis.com/variable-resolution-applied-computational-psychology-course/datasets/csv/andrea_reddit_results_andrea_2025_03_13.csv")
+   =IMPORTDATA("https://storage.googleapis.com/variable-resolution-applied-computational-psychology-course/datasets/csv/andrea_sample_2k_for_sheets.csv")
    ```
 
-**Note:** This dataset has 871,775 rows. Google Sheets may only load the first ~50,000. That's fine for learning!
+**Note:** This is a 2,000 row sample optimized for Google Sheets. The full dataset has 871K rows!
 
 ### Step 3: Initial Inspection
 Before cleaning, ALWAYS look at your data first.
@@ -202,9 +202,10 @@ _________________________________
 
 ## Troubleshooting
 
-**"IMPORTDATA won't load - too many rows"**
-- That's expected! The full dataset is 871K rows
-- Google Sheets has limits - working with the first 50K is fine for learning
+**"IMPORTDATA won't load"**
+- Check the URL is exactly correct (copy-paste it)
+- Try refreshing the page and re-entering the formula
+- The 2K sample should load in under 30 seconds
 
 **"My dates look weird (like 45678)"**
 - Select the column → Format → Number → Date
