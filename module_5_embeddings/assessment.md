@@ -164,7 +164,7 @@ Why are these texts semantically different despite being in the same dataset?
 
 1. Complete all written answers in a single document
 2. Include required screenshots
-3. Upload your saved files (embeddings.npy) to course platform
+3. Include screenshot showing embedding shape and similarity output
 4. Submit via [Course Platform] by [Deadline]
 
 ---

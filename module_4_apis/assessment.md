@@ -183,7 +183,7 @@ In 3-4 sentences, reflect on the data collection process:
 
 1. Complete all sections in a single document
 2. Include screenshots where requested
-3. Upload your CSV file to the course platform
+3. Include a screenshot of your collected data
 4. Submit via [Course Platform] by [Deadline]
 
 ---

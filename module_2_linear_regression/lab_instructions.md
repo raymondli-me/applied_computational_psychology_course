@@ -3,50 +3,14 @@
 ## Lab Overview
 **Duration:** 60 minutes
 **Tools Required:** Google Colab (free, browser-based Python)
-**Dataset:** Choose from course dataset bank (see below)
-**Notebook:** `01_regression_boilerplate.ipynb`
-
----
-
-## Dataset Options for This Lab
-
-### Recommended: Agatha's Dance Ratings
-```python
-# === DATASET LOADER (Run First) ===
-import pandas as pd
-import json
-import urllib.request
-
-GCS_BUCKET = "variable-resolution-applied-computational-psychology-course"
-CATALOG_URL = f"https://storage.googleapis.com/{GCS_BUCKET}/manifest.json"
-
-with urllib.request.urlopen(CATALOG_URL) as r:
-    CATALOG = json.loads(r.read().decode())
-
-def load_dataset(name, nrows=None):
-    for ds in CATALOG['datasets']:
-        if ds['canonical_name'] == name:
-            url = ds['access']['public_url']
-            return pd.read_csv(url, nrows=nrows)
-    raise ValueError(f"Dataset '{name}' not found")
-
-# Agatha's Dance Data - 30,511 posts with engagement scores
-# Perfect for Module 2: regression with continuous variables
-df = load_dataset("agatha_ballet_dancemoms_agatha", nrows=5000)
-print(f"Loaded {len(df):,} rows with columns: {list(df.columns)}")
-# Key columns: Post Score, Comment Score, Post Title, Post Num Comments
-```
-
-*Agatha's team of 6 human raters coded body image constructs in dance communities - ideal for inter-rater reliability practice.*
-
-**Alternative datasets:** See `DATASETS_FOR_M2.md` for all options.
+**Dataset:** Agatha's Dance Community Data (from course dataset bank)
 
 ---
 
 ## Learning Goals
 By the end of this lab, you will:
 - Run a linear regression in Python using statsmodels
-- Interpret the regression output
+- Interpret the regression output (β, p-value, R²)
 - Add control variables to your model
 - Write up results in APA format
 
@@ -54,182 +18,181 @@ By the end of this lab, you will:
 
 ## Setup Instructions
 
-### Step 1: Open Google Colab
-1. Go to [colab.research.google.com](https://colab.research.google.com)
-2. Sign in with your Google account
-3. File > Open notebook > GitHub/Upload
-4. Upload `01_regression_boilerplate.ipynb` from the course materials
+### Step 1: Open the Course Notebook
+1. Go to the course repository on GitHub
+2. Click the "Open in Colab" badge
+3. If you haven't already, save a copy to your Drive (File → Save a copy in Drive)
 
-### Step 2: Upload the Dataset
-1. In Colab, click the folder icon (left sidebar)
-2. Click the upload button
-3. Upload `youtube_videos_clean.csv`
+### Step 2: Load the Dataset
+Run the setup cell first (if you haven't already this session), then load Agatha's data:
+
+```python
+# Load Agatha's Dance Community Data
+df = load_dataset("agatha_ballet_dancemoms_agatha")
+print(f"Loaded {len(df):,} rows")
+print(f"Columns: {list(df.columns)}")
+df.head()
+```
+
+**About this dataset:** Agatha collected posts from dance communities (ballet, DanceMoms, etc.) to study body image discussions. Key columns:
+- `Post Score` - upvotes/engagement (our DV)
+- `Post Num Comments` - number of comments
+- `Post Title` - title text (we can compute length)
 
 ---
 
-## Part 1: Understanding the Boilerplate (15 minutes)
+## Part 1: Explore the Data (10 minutes)
 
-The notebook has several cells. **Read the comments** before running each cell.
+Before running any analysis, understand what you're working with.
 
-### Cell 1: Setup (Just Run It)
 ```python
-# ============================================
-# SETUP - Run this cell first, don't modify
-# ============================================
-import pandas as pd
-import statsmodels.formula.api as smf
-import warnings
-warnings.filterwarnings('ignore')
+# Basic exploration
+print("Dataset shape:", df.shape)
+print("\nColumn types:")
+print(df.dtypes)
 
-# Load the data
-df = pd.read_csv('youtube_videos_clean.csv')
-print(f"Dataset loaded: {len(df)} videos")
-print(f"Columns: {list(df.columns)}")
-```
-
-**What this does:** Imports libraries and loads your data.
-
-### Cell 2: Explore the Data
-```python
-# ============================================
-# EXPLORE - Look at your data
-# ============================================
-print("First 5 rows:")
-print(df.head())
-
-print("\nBasic statistics:")
+print("\nBasic statistics for numeric columns:")
 print(df.describe())
 ```
 
-**Your task:** Run this cell. Answer:
-- What is the mean like_count?
-- What is the range of word_count?
+**Your task:** Answer these questions:
+1. How many rows (observations)?
+2. How many columns (variables)?
+3. What is the mean Post Score?
+4. What is the range of Post Num Comments?
 
 ---
 
 ## Part 2: Simple Regression (20 minutes)
 
-### Cell 3: Run Your First Regression
+Let's predict Post Score from the number of comments.
+
+### Step 1: Import statsmodels and run regression
+
 ```python
-# ============================================
-# SIMPLE REGRESSION
-# Predict: like_count (Y/DV)
-# From: word_count (X/IV)
-# ============================================
+import statsmodels.formula.api as smf
 
-# Define the model using formula syntax
-model = smf.ols('like_count ~ word_count', data=df)
-
-# Fit the model
+# Simple regression: Does number of comments predict post score?
+model = smf.ols('Q("Post Score") ~ Q("Post Num Comments")', data=df)
 results = model.fit()
-
-# Print the summary
 print(results.summary())
 ```
 
-**Your task:** Run this cell and find these three numbers:
-1. The coefficient (coef) for word_count: ___________
-2. The p-value (P>|t|) for word_count: ___________
-3. The R-squared value: ___________
+**Note:** We use `Q("Column Name")` when column names have spaces.
 
-### Understanding the Output
+### Step 2: Find these key values in the output
 
-**Look for this section in the output:**
-
+Look for this section:
 ```
-                  coef    std err    t      P>|t|    [0.025    0.975]
------------------------------------------------------------------------------
-Intercept       XXX.XX    XXX.XX   X.XX    0.XXX    XXX.XX    XXX.XX
-word_count        X.XX      X.XX   X.XX    0.XXX      X.XX      X.XX
+                         coef    std err    t      P>|t|    [0.025    0.975]
+----------------------------------------------------------------------------------
+Intercept              XXX.XX    XXX.XX   X.XX    0.XXX    XXX.XX    XXX.XX
+Q("Post Num Comments")   X.XX      X.XX   X.XX    0.XXX      X.XX      X.XX
 ```
 
-- **coef:** This is the unstandardized coefficient (b)
-- **P>|t|:** This is the p-value
+**Your task:** Record these values:
+1. Coefficient for Post Num Comments: ___________
+2. P-value for Post Num Comments: ___________
+3. R-squared (find at top of output): ___________
 
-**And this section:**
-```
-R-squared:           0.XXX
-```
+### Step 3: Interpret the results
 
-### Getting Standardized Beta (β)
-
-To compare effects across variables, we need standardized coefficients:
-
-```python
-# ============================================
-# STANDARDIZED COEFFICIENTS (BETA)
-# ============================================
-from scipy import stats
-
-# Standardize variables (convert to z-scores)
-df['word_count_z'] = stats.zscore(df['word_count'])
-df['like_count_z'] = stats.zscore(df['like_count'])
-
-# Run regression with standardized variables
-model_std = smf.ols('like_count_z ~ word_count_z', data=df)
-results_std = model_std.fit()
-
-print("Standardized Beta (β):", round(results_std.params['word_count_z'], 3))
-```
-
-**Your task:** What is your standardized β? ___________
+- **Coefficient (coef):** For each additional comment, Post Score changes by this amount
+- **P-value (P>|t|):** If < .05, the relationship is statistically significant
+- **R-squared:** Proportion of variance in Post Score explained by the model
 
 ---
 
-## Part 3: Multiple Regression (15 minutes)
+## Part 3: Create a Predictor Variable (10 minutes)
 
-Now let's control for view_count.
+Let's test if title length predicts engagement.
 
-### Cell 4: Adding a Control Variable
 ```python
-# ============================================
-# MULTIPLE REGRESSION
-# Predict: like_count (Y/DV)
-# From: word_count (X1/IV) + view_count (Control)
-# ============================================
+# Create a new variable: title length
+df['title_length'] = df['Post Title'].fillna('').str.len()
 
-# Add both predictors with +
-model2 = smf.ols('like_count ~ word_count + view_count', data=df)
+print("Title length stats:")
+print(df['title_length'].describe())
+```
+
+Now run regression with title length:
+
+```python
+# Does title length predict post score?
+model2 = smf.ols('Q("Post Score") ~ title_length', data=df)
 results2 = model2.fit()
-
 print(results2.summary())
+```
+
+**Your task:**
+1. What is the coefficient for title_length? ___________
+2. Is it significant (p < .05)? ___________
+3. What does this mean in plain language?
+
+---
+
+## Part 4: Multiple Regression (15 minutes)
+
+Now let's control for one variable while testing another.
+
+```python
+# Multiple regression: title_length + Post Num Comments
+model3 = smf.ols('Q("Post Score") ~ title_length + Q("Post Num Comments")', data=df)
+results3 = model3.fit()
+print(results3.summary())
 ```
 
 **Your task:** Compare results:
 
-| | Simple Regression | Multiple Regression |
-|--|---|---|
-| β for word_count | ___ | ___ |
-| p-value for word_count | ___ | ___ |
+| Metric | Simple (title only) | Multiple (both) |
+|--------|---------------------|-----------------|
+| β for title_length | ___ | ___ |
+| p-value for title_length | ___ | ___ |
 | R-squared | ___ | ___ |
 
-**Interpretation question:** Did the effect of word_count get stronger, weaker, or stay the same after controlling for view_count? Why might this be?
+**Interpretation question:** Did the effect of title_length change after controlling for Post Num Comments? Why might this be?
 
 ---
 
-## Part 4: Writing Your Results (10 minutes)
+## Part 5: Getting Standardized Beta (β)
 
-### Task: Write 3 APA-Style Sentences
+To compare effects across variables with different scales, use standardized coefficients:
+
+```python
+from scipy import stats
+
+# Standardize variables (convert to z-scores)
+df['post_score_z'] = stats.zscore(df['Post Score'].fillna(0))
+df['title_length_z'] = stats.zscore(df['title_length'].fillna(0))
+df['num_comments_z'] = stats.zscore(df['Post Num Comments'].fillna(0))
+
+# Run regression with standardized variables
+model_std = smf.ols('post_score_z ~ title_length_z + num_comments_z', data=df)
+results_std = model_std.fit()
+
+print("Standardized Betas:")
+print(f"  title_length: β = {results_std.params['title_length_z']:.3f}")
+print(f"  num_comments: β = {results_std.params['num_comments_z']:.3f}")
+```
+
+**Your task:** Which variable has a stronger effect on Post Score?
+
+---
+
+## Part 6: Write Your Results in APA Format (5 minutes)
 
 Use this template:
 
 **Sentence 1:** State what analysis you did
-> "A [simple/multiple] linear regression was conducted to predict [DV] from [IV(s)]."
+> "A multiple linear regression was conducted to predict [DV] from [IV1] and [IV2]."
 
 **Sentence 2:** Report the main finding
-> "Results indicated that [IV] [significantly/did not significantly] predict [DV], β = [value], p [< .001 / = .XXX]."
+> "Results indicated that [IV] [significantly/did not significantly] predicted [DV], β = [value], p [< .001 / = .XXX]."
 
 **Sentence 3:** Report variance explained
 > "The model explained [X]% of the variance in [DV] (R² = [value])."
 
-### Your APA Write-Up:
-
-**For Simple Regression:**
-1. _______________________________________________
-2. _______________________________________________
-3. _______________________________________________
-
-**For Multiple Regression (including "controlling for"):**
+**Your APA Write-Up:**
 1. _______________________________________________
 2. _______________________________________________
 3. _______________________________________________
@@ -240,30 +203,33 @@ Use this template:
 
 ### Required Deliverables:
 
-1. **Screenshot:** Your regression output (the full summary table)
+1. **Screenshot:** Your multiple regression output
 
 2. **Table:** Fill in these values
 
 | Metric | Simple Regression | Multiple Regression |
 |--------|-------------------|---------------------|
-| β (word_count) | | |
+| β (title_length) | | |
 | p-value | | |
 | R² | | |
 
 3. **APA Paragraph:** Your 3 sentences for the multiple regression
 
-4. **Interpretation:** One sentence in plain language explaining what the results mean (e.g., "Videos with more words tend to get more likes, even accounting for how many views they got.")
+4. **Plain Language:** One sentence explaining what the results mean
 
 ---
 
 ## Troubleshooting
 
 **"ModuleNotFoundError: No module named 'statsmodels'"**
-- Run: `!pip install statsmodels` in a cell, then restart runtime
+```python
+!pip install statsmodels
+```
+Then restart runtime (Runtime → Restart runtime)
 
-**"FileNotFoundError: youtube_videos_clean.csv"**
-- Make sure you uploaded the file (check the folder icon)
-- Check the filename matches exactly
+**"KeyError: 'Post Score'"**
+- Check column names with `print(df.columns)`
+- Column names are case-sensitive
 
 **"My R² is really low (like 0.02)"**
 - This is normal in psychology! Human behavior is messy
@@ -275,24 +241,12 @@ Use this template:
 
 ---
 
-## Challenge Extension (Optional)
+## Key Takeaways
 
-**For students who finish early:**
+Before moving to Module 3, make sure you understand:
 
-1. **Add another predictor:**
-```python
-model3 = smf.ols('like_count ~ word_count + view_count + comment_count', data=df)
-```
-How does R² change?
-
-2. **Create a scatterplot:**
-```python
-import matplotlib.pyplot as plt
-plt.scatter(df['word_count'], df['like_count'], alpha=0.5)
-plt.xlabel('Word Count')
-plt.ylabel('Like Count')
-plt.title('Word Count vs. Likes')
-plt.show()
-```
-
-3. **Check for non-linearity:** Does the relationship look linear, or is there a curve?
+1. **Regression predicts** a DV from one or more IVs
+2. **Coefficient (β)** tells you direction and strength of relationship
+3. **P-value** tells you if the relationship is statistically significant
+4. **R²** tells you how much variance is explained
+5. **Controlling for** a variable means including it in the model

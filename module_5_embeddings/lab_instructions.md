@@ -57,10 +57,10 @@ By the end of this lab, you will:
 
 ## Setup Instructions
 
-### Step 1: Open Notebook
-1. Open Google Colab
-2. Upload `04_embeddings_boilerplate.ipynb`
-3. Upload your dataset from Module 4 (or use provided `sample_headlines.csv`)
+### Step 1: Open the Course Notebook
+1. Open your course notebook in Colab
+2. Make sure you've run the setup cell with `load_dataset()`
+3. Load Clara's pre-computed embeddings (recommended) or your own data
 
 ### Step 2: Verify GPU (Optional but Faster)
 1. Runtime > Change runtime type
@@ -325,12 +325,10 @@ df_with_embeddings['embedding_index'] = range(len(df))
 df_with_embeddings.to_csv('data_with_embedding_index.csv', index=False)
 print("Data index saved to: data_with_embedding_index.csv")
 
-# Download files (Colab)
-from google.colab import files
-files.download('embeddings.npy')
-files.download('data_with_embedding_index.csv')
+# Files are saved in Colab's /content/ folder
+# They persist for the session and can be used in Module 6
 
-print("\nThese files will be used in Module 6 for visualization!")
+print("\nFiles saved! Ready for Module 6 visualization.")
 ```
 
 ### Cell 11: Summary Statistics
@@ -365,8 +363,8 @@ print(f"\nReady for dimensionality reduction in Module 6!")
 3. **Interpretation (2-3 sentences):**
    Why do you think these two texts were identified as most similar? What semantic features do they share?
 
-4. **Saved Files:**
-   - embeddings.npy (upload to course platform)
+4. **Saved Files:** Confirm these exist in your Colab environment:
+   - embeddings.npy
    - data_with_embedding_index.csv
 
 ---

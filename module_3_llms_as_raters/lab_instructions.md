@@ -1,50 +1,9 @@
 # Module 3 Lab: Building an AI Rater
 
 ## Lab Overview
-**Duration:** 60 minutes
-**Tools Required:** Google Colab, OpenAI API access (provided)
-**Dataset:** Choose from course dataset bank (see below)
-**Notebook:** `02_llm_rating_boilerplate.ipynb`
-
----
-
-## Dataset Options for This Lab
-
-### Recommended: Kaitlyn's Mental Health Data (with human ground truth)
-```python
-# === DATASET LOADER (Run First) ===
-import pandas as pd
-import json
-import urllib.request
-
-GCS_BUCKET = "variable-resolution-applied-computational-psychology-course"
-CATALOG_URL = f"https://storage.googleapis.com/{GCS_BUCKET}/manifest.json"
-
-with urllib.request.urlopen(CATALOG_URL) as r:
-    CATALOG = json.loads(r.read().decode())
-
-def load_dataset(name, nrows=None):
-    for ds in CATALOG['datasets']:
-        if ds['canonical_name'] == name:
-            url = ds['access']['public_url']
-            return pd.read_csv(url, nrows=nrows)
-    raise ValueError(f"Dataset '{name}' not found")
-
-# Kaitlyn's Mental Health Data - 809K comments with human ratings
-# Sample for practice:
-df = load_dataset("kaitlyn_merged_data_overview_kaitlyn_master", nrows=100)
-print(f"Loaded {len(df):,} rows")
-```
-
-*Kaitlyn's 6-rater team achieved κ > 0.80 reliability across 23 mental health conditions - use as ground truth for your LLM prompts.*
-
-**Alternative for small-scale testing:**
-```python
-# Peter's GPT-analyzed news data
-df = load_dataset("peter_fox_msnbc_100video_gpt_data_to_analyze_mar9_2025", nrows=50)
-```
-
-**See:** `DATASETS_FOR_M3.md` for all options.
+**Duration:** 90 minutes
+**Tools Required:** Google Colab, OpenAI API key
+**Dataset:** Yashita's YouTube Data or Kaitlyn's Mental Health Data (from course dataset bank)
 
 ---
 
@@ -59,290 +18,297 @@ By the end of this lab, you will:
 
 ## Setup Instructions
 
-### Step 1: Get Your API Key
-1. The course provides a shared API key (check course announcements)
-2. OR create your own at [platform.openai.com](https://platform.openai.com)
-3. Keep your API key secret - never share it publicly
+### Step 1: Open the Course Notebook
+1. Go to the course repository on GitHub
+2. Click the "Open in Colab" badge
+3. Make sure you've run the setup cell to enable `load_dataset()`
 
-### Step 2: Open the Notebook
-1. Open Google Colab
-2. Upload `02_llm_rating_boilerplate.ipynb`
-3. Upload `news_headlines_50.csv`
+### Step 2: Get Your API Key
+1. The course may provide a shared API key (check announcements)
+2. OR create your own at [platform.openai.com](https://platform.openai.com)
+3. Keep your API key secret - never commit it to GitHub!
+
+### Step 3: Load the Dataset
+
+```python
+# Load Yashita's YouTube data - small, good for testing prompts
+df = load_dataset("yashita_yashita_data")
+print(f"Loaded {len(df):,} rows")
+print(f"Columns: {list(df.columns)}")
+
+# We'll rate video descriptions for OPTIMISM
+# Take a sample for practice
+df_sample = df.head(50).copy()
+print(f"\nUsing {len(df_sample)} rows for practice")
+df_sample[['video_title', 'description']].head()
+```
+
+**Alternative for validation (with human ratings):**
+```python
+# Kaitlyn's data has human ground truth ratings
+df = load_dataset("kaitlyn_merged_data_overview_kaitlyn_master", nrows=100)
+```
 
 ---
 
-## Part 1: Human Rating (15 minutes)
+## Part 1: Human Rating Practice (15 minutes)
 
-Before we ask the AI to rate anything, YOU will rate the headlines.
+Before asking AI to rate, YOU will rate some items first.
 
-### Task: Rate Headlines for OPTIMISM
+### Task: Rate 10 Video Descriptions for OPTIMISM
 
-**Definition:** Optimism refers to the expression of positive expectations, hope, or favorable outlooks about the future in the headline.
+**Definition:** Optimism refers to the expression of positive expectations, hope, or favorable outlooks in the text.
 
 **Scale:**
-- 1 = Very pessimistic (doom, disaster, negative outlook)
-- 4 = Neutral (factual, neither optimistic nor pessimistic)
-- 7 = Very optimistic (hopeful, positive, encouraging outlook)
+- 1 = Very pessimistic (negative, hopeless)
+- 4 = Neutral (factual, neither positive nor negative)
+- 7 = Very optimistic (hopeful, positive, encouraging)
 
-### Your Rating Task
+```python
+# View 10 items to rate
+for i, row in df_sample.head(10).iterrows():
+    print(f"\n--- Item {i+1} ---")
+    print(f"Title: {row['video_title'][:80]}...")
+    desc = str(row['description'])[:200] if pd.notna(row['description']) else "(no description)"
+    print(f"Description: {desc}...")
+    print()
+```
 
-Open `news_headlines_50.csv` and rate ALL 50 headlines. Record your ratings in a new column called `human_rating`.
-
-**Sample headlines and example ratings:**
-| Headline | Rating | Reasoning |
-|----------|--------|-----------|
-| "Economy Expected to Grow Despite Challenges" | 5 | Slightly optimistic - acknowledges challenges but expects growth |
-| "Scientists Warn of Irreversible Climate Damage" | 2 | Pessimistic - warning, irreversible, damage |
-| "Local School Wins National Science Competition" | 6 | Optimistic - positive achievement, success |
-
-**Tips:**
-- Work quickly - trust your gut reaction
-- Don't overthink - first impression matters
-- Be consistent - would you rate similar headlines similarly?
+**Your Task:** Rate each of the 10 items. Record your ratings:
+```python
+# Enter YOUR ratings for items 0-9
+my_ratings = {
+    0: _,  # Your rating for item 0
+    1: _,
+    2: _,
+    3: _,
+    4: _,
+    5: _,
+    6: _,
+    7: _,
+    8: _,
+    9: _,
+}
+```
 
 ---
 
 ## Part 2: Setting Up the AI Rater (10 minutes)
 
-### Cell 1: Setup
+### Install OpenAI and set up client
+
 ```python
-# ============================================
-# SETUP - Run this cell first
-# ============================================
-!pip install openai pandas -q
+!pip install openai -q
 
 import openai
-import pandas as pd
 import time
 
-# Enter your API key
-API_KEY = "your-api-key-here"  # Replace with actual key
+# Enter your API key (keep this secret!)
+API_KEY = "your-api-key-here"  # Replace with your actual key
 client = openai.OpenAI(api_key=API_KEY)
 
-# Load data
-df = pd.read_csv('news_headlines_50.csv')
-print(f"Loaded {len(df)} headlines")
-print(df.head())
+# Test connection
+try:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Say 'connected' and nothing else"}],
+        max_tokens=10
+    )
+    print("API Connected:", response.choices[0].message.content)
+except Exception as e:
+    print("Connection failed:", e)
 ```
 
-### Cell 2: Define Your Rating Prompt
+### Define Your Rating Prompt
 
 ```python
-# ============================================
-# YOUR RATING PROMPT - MODIFY THIS
-# ============================================
-
-def create_prompt(headline):
+def create_prompt(text):
     """
-    Creates a rating prompt for a single headline.
-    MODIFY the prompt below to rate for OPTIMISM.
+    Creates a rating prompt for a piece of text.
+    MODIFY THIS to improve your results!
     """
+    prompt = f"""You are a research assistant helping code text for psychological research.
 
-    prompt = f"""You are a research assistant helping code news headlines for psychological research.
+TASK: Rate the following text on OPTIMISM.
 
-TASK: Rate the following headline on OPTIMISM.
-
-DEFINITION: Optimism refers to the expression of positive expectations, hope, or favorable outlooks about the future in the headline.
+DEFINITION: Optimism refers to the expression of positive expectations, hope, or favorable outlooks.
 
 SCALE:
-1 = Very pessimistic (doom, disaster, negative outlook)
-4 = Neutral (factual, neither optimistic nor pessimistic)
-7 = Very optimistic (hopeful, positive, encouraging outlook)
+1 = Very pessimistic (negative, hopeless, discouraging)
+4 = Neutral (factual, neither positive nor negative)
+7 = Very optimistic (hopeful, positive, encouraging)
 
-HEADLINE TO RATE:
-"{headline}"
+TEXT TO RATE:
+"{text}"
 
 Provide ONLY a single number (1-7) as your response."""
 
     return prompt
 
 # Test your prompt
-test_headline = "Scientists Discover Breakthrough Treatment for Cancer"
-print("Testing prompt with:", test_headline)
-print("\n" + create_prompt(test_headline))
+test_text = "This video will change your life! Amazing results guaranteed!"
+print(create_prompt(test_text))
 ```
 
 ---
 
-## Part 3: Running the AI Rater (15 minutes)
+## Part 3: Running the AI Rater (20 minutes)
 
-### Cell 3: Rate Function
+### Rating Function
 
 ```python
-# ============================================
-# AI RATING FUNCTION
-# ============================================
+def get_ai_rating(text, max_retries=3):
+    """Get AI rating for a single text. Returns int 1-7 or None."""
+    if pd.isna(text) or str(text).strip() == "":
+        return None
 
-def get_ai_rating(headline, max_retries=3):
-    """
-    Gets an AI rating for a single headline.
-    Returns an integer 1-7 or None if failed.
-    """
-    prompt = create_prompt(headline)
+    prompt = create_prompt(str(text)[:500])  # Limit text length
 
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Fast and cheap
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0,  # CRITICAL: Set to 0 for consistency
+                temperature=0,  # CRITICAL: 0 for consistency
                 max_tokens=5
             )
-
-            # Extract the number
-            rating_text = response.choices[0].message.content.strip()
-            rating = int(rating_text)
-
-            # Validate range
+            rating = int(response.choices[0].message.content.strip())
             if 1 <= rating <= 7:
                 return rating
-            else:
-                print(f"Warning: Rating {rating} out of range for: {headline[:50]}...")
-                return None
-
         except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
             time.sleep(1)
 
     return None
 ```
 
-### Cell 4: Rate All Headlines
+### Rate All Items
 
 ```python
-# ============================================
-# RATE ALL HEADLINES
-# ============================================
-
-print("Starting AI rating... (this may take a few minutes)")
+print("Rating items with AI... (this takes a few minutes)")
 
 ai_ratings = []
-for i, row in df.iterrows():
-    headline = row['headline']
-    rating = get_ai_rating(headline)
+for i, row in df_sample.iterrows():
+    text = row.get('description', row.get('video_title', ''))
+    rating = get_ai_rating(text)
     ai_ratings.append(rating)
 
-    # Progress update every 10 items
     if (i + 1) % 10 == 0:
-        print(f"Rated {i + 1}/{len(df)} headlines")
+        print(f"Rated {i + 1}/{len(df_sample)}")
 
-# Add to dataframe
-df['ai_rating'] = ai_ratings
-
-# Show results
-print("\nSample of ratings:")
-print(df[['headline', 'ai_rating']].head(10))
-
-# Save results
-df.to_csv('headlines_with_ai_ratings.csv', index=False)
-print("\nResults saved to headlines_with_ai_ratings.csv")
+df_sample['ai_rating'] = ai_ratings
+print(f"\nDone! Got {df_sample['ai_rating'].notna().sum()} valid ratings")
 ```
 
 ---
 
-## Part 4: Calculate Agreement (10 minutes)
+## Part 4: Calculate Agreement (15 minutes)
 
-### Cell 5: Add Your Human Ratings
+### Add Your Human Ratings
 
 ```python
-# ============================================
-# ADD YOUR HUMAN RATINGS
-# ============================================
+# Add your human ratings for the first 10 items
+human_ratings = [None] * len(df_sample)
 
-# Option 1: Enter manually (if you rated in a separate sheet)
-# Replace these with YOUR actual ratings
-human_ratings = [
-    5, 2, 6, 4, 3, 7, 2, 5, 4, 6,  # Headlines 1-10
-    # ... add all 50 ratings
-]
+# Fill in your ratings from Part 1
+my_ratings = {
+    0: 5,  # Replace with your actual ratings
+    1: 3,
+    2: 6,
+    # ... etc
+}
 
-# Option 2: Load from file
-# df_human = pd.read_csv('your_human_ratings.csv')
-# human_ratings = df_human['human_rating'].tolist()
+for idx, rating in my_ratings.items():
+    human_ratings[idx] = rating
 
-df['human_rating'] = human_ratings
+df_sample['human_rating'] = human_ratings
 ```
 
-### Cell 6: Calculate Correlation
+### Calculate Correlation
 
 ```python
-# ============================================
-# CALCULATE HUMAN-AI AGREEMENT
-# ============================================
 from scipy import stats
 
-# Remove any rows where AI failed to rate
-df_valid = df.dropna(subset=['ai_rating', 'human_rating'])
+# Get rows where both human and AI rated
+df_valid = df_sample.dropna(subset=['ai_rating', 'human_rating'])
 
-# Calculate Pearson correlation
-correlation, p_value = stats.pearsonr(
-    df_valid['human_rating'],
-    df_valid['ai_rating']
-)
+if len(df_valid) >= 3:
+    correlation, p_value = stats.pearsonr(
+        df_valid['human_rating'],
+        df_valid['ai_rating']
+    )
 
-print("=" * 50)
-print("HUMAN-AI AGREEMENT RESULTS")
-print("=" * 50)
-print(f"Correlation (r): {correlation:.3f}")
-print(f"P-value: {p_value:.4f}")
-print(f"Number of valid ratings: {len(df_valid)}")
+    print("=" * 50)
+    print("HUMAN-AI AGREEMENT RESULTS")
+    print("=" * 50)
+    print(f"Correlation (r): {correlation:.3f}")
+    print(f"P-value: {p_value:.4f}")
+    print(f"N items compared: {len(df_valid)}")
 
-# Interpretation
-if correlation > 0.80:
-    print("\nInterpretation: EXCELLENT agreement - AI matches your judgment closely")
-elif correlation > 0.60:
-    print("\nInterpretation: GOOD agreement - AI captures the construct reasonably")
-elif correlation > 0.40:
-    print("\nInterpretation: MODERATE agreement - Consider refining your prompt")
+    if correlation > 0.80:
+        print("\n✓ EXCELLENT agreement!")
+    elif correlation > 0.60:
+        print("\n✓ GOOD agreement")
+    elif correlation > 0.40:
+        print("\n~ MODERATE - consider refining prompt")
+    else:
+        print("\n✗ LOW - revise prompt significantly")
 else:
-    print("\nInterpretation: POOR agreement - Major prompt revision needed")
+    print("Need at least 3 items with both ratings to calculate correlation")
 ```
 
-### Cell 7: Examine Disagreements
+### Examine Disagreements
 
 ```python
-# ============================================
-# ANALYZE DISAGREEMENTS
-# ============================================
-
-# Calculate difference
+# Where did human and AI disagree most?
 df_valid['difference'] = abs(df_valid['human_rating'] - df_valid['ai_rating'])
 
-# Find biggest disagreements
-disagreements = df_valid.nlargest(5, 'difference')[
-    ['headline', 'human_rating', 'ai_rating', 'difference']
-]
-
-print("BIGGEST DISAGREEMENTS (Human vs. AI):")
+print("\nBIGGEST DISAGREEMENTS:")
 print("=" * 60)
-for _, row in disagreements.iterrows():
-    print(f"\nHeadline: {row['headline'][:60]}...")
-    print(f"Human: {row['human_rating']} | AI: {row['ai_rating']} | Diff: {row['difference']}")
+for _, row in df_valid.nlargest(3, 'difference').iterrows():
+    text = str(row.get('description', row.get('video_title', '')))[:60]
+    print(f"\nText: {text}...")
+    print(f"Human: {row['human_rating']} | AI: {row['ai_rating']}")
 ```
 
 ---
 
-## Part 5: Iterate & Improve (10 minutes)
+## Part 5: Iterate & Improve (15 minutes)
 
-Based on the disagreements, consider:
+Based on disagreements, improve your prompt:
 
-1. **Is your definition clear?**
-   - Did the AI interpret "optimism" differently?
+### Common Improvements
 
-2. **Are your anchors specific enough?**
-   - Maybe the midpoint needs more detail?
+1. **Add examples:**
+```python
+prompt = """...
+EXAMPLES:
+- "Everything is terrible and will only get worse" → 1
+- "The meeting is scheduled for Tuesday" → 4
+- "Exciting breakthrough offers new hope!" → 7
+..."""
+```
 
-3. **Is your own rating consistent?**
-   - Would you rate the disagreement items the same way again?
+2. **Clarify edge cases:**
+```python
+prompt = """...
+NOTE: Promotional/clickbait language ("AMAZING!") should be rated
+based on actual content, not just enthusiasm.
+..."""
+```
 
-### Task: Revise Your Prompt
+3. **Be more specific:**
+```python
+prompt = """...
+Rate based on:
+- Positive future expectations = higher scores
+- Negative predictions or warnings = lower scores
+- Neutral facts without valence = middle scores
+..."""
+```
 
-Go back to Cell 2 and modify your prompt. Then re-run the rating.
+### Re-run and Compare
 
-**Common Improvements:**
-- Add examples: "A headline like 'Cure Found for Disease' would be a 7"
-- Clarify edge cases: "Headlines about neutral events should be 4"
-- Be more specific about what counts
+After modifying `create_prompt()`, run the rating again and compare correlations.
 
 ---
 
@@ -350,17 +316,17 @@ Go back to Cell 2 and modify your prompt. Then re-run the rating.
 
 ### Required Deliverables:
 
-1. **Your Final Prompt** (copy-paste the full text)
+1. **Your Final Prompt** (copy the full text)
 
-2. **Correlation Coefficient:**
-   - Your r value: ___________
+2. **Agreement Statistics:**
+   - Correlation (r): ___________
    - P-value: ___________
-   - Interpretation: ___________
+   - N items: ___________
 
 3. **Disagreement Analysis** (2-3 sentences):
    - Describe one major disagreement
-   - Explain why you think human and AI differed
-   - How might you revise the prompt to address this?
+   - Why did human and AI differ?
+   - How would you fix the prompt?
 
 4. **Screenshot:** Your correlation output
 
@@ -368,34 +334,30 @@ Go back to Cell 2 and modify your prompt. Then re-run the rating.
 
 ## Troubleshooting
 
-**"Authentication Error"**
-- Double-check your API key
-- Make sure there are no extra spaces
+**"AuthenticationError"**
+- Check your API key - no extra spaces
+- Make sure it starts with "sk-"
 
-**"Rate limit exceeded"**
-- The free tier has limits
+**"RateLimitError"**
 - Add `time.sleep(1)` between requests
+- Or wait a few minutes and retry
 
-**"AI returns non-number responses"**
-- Add "Provide ONLY a number" to your prompt
-- Check that temperature is set to 0
+**"AI returns text instead of number"**
+- Add "Respond with ONLY a single digit" to your prompt
+- Make sure temperature=0
 
 **"Very low correlation"**
-- Don't panic - this is a learning opportunity
-- Check: Are YOU consistent? Re-rate 10 items and see if you agree with yourself
+- Check: Are YOU consistent? Re-rate 5 items
+- Check: Is your definition clear?
+- Try adding examples to the prompt
 
 ---
 
-## Challenge Extension (Optional)
+## Key Takeaways
 
-1. **Try a different construct:**
-   - Rate for "FEAR" instead of optimism
-   - How does agreement compare?
+Before moving to Module 4:
 
-2. **Compare models:**
-   - Run with gpt-4o-mini vs. gpt-4o
-   - Is the more expensive model more accurate?
-
-3. **Few-shot learning:**
-   - Add 3 example ratings to your prompt
-   - Does agreement improve?
+1. **Prompt = Survey Question** - same design principles apply
+2. **Temperature = 0** for reproducible ratings
+3. **Always validate** against human judgment
+4. **Iterate** - first prompt is rarely best

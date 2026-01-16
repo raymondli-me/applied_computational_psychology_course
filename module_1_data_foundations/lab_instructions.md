@@ -2,74 +2,48 @@
 
 ## Lab Overview
 **Duration:** 60 minutes
-**Tools Required:** Google Sheets (free with Google account) or Google Colab
-**Dataset:** Choose from the course dataset bank (see below)
-
----
-
-## Dataset Options for This Lab
-
-### Option A: Use Course Dataset Bank (Recommended)
-
-Copy this boilerplate into a Colab notebook:
-```python
-# === DATASET LOADER (Run First) ===
-import pandas as pd
-import json
-import urllib.request
-
-GCS_BUCKET = "variable-resolution-applied-computational-psychology-course"
-GCS_BASE_URL = f"https://storage.googleapis.com/{GCS_BUCKET}"
-CATALOG_URL = f"{GCS_BASE_URL}/manifest.json"
-
-# Load catalog
-with urllib.request.urlopen(CATALOG_URL) as r:
-    CATALOG = json.loads(r.read().decode())
-print(f"Loaded catalog: {len(CATALOG['datasets'])} datasets available")
-
-def load_dataset(name, nrows=None):
-    """Load a dataset by name from GCS."""
-    for ds in CATALOG['datasets']:
-        if ds['canonical_name'] == name:
-            url = ds['access']['public_url']
-            df = pd.read_csv(url, nrows=nrows)
-            print(f"Loaded {len(df):,} rows from {name}")
-            return df
-    raise ValueError(f"Dataset '{name}' not found")
-```
-
-Then load Andrea's wedding Reddit data:
-```python
-# Andrea's Wedding Reddit Data - 871,775 posts
-# Perfect for Module 1: learning tidy data principles
-df = load_dataset("andrea_reddit_results_andrea_2025_03_13", nrows=5000)  # Start with sample
-df.head()
-```
-
-### Option B: Use Provided Sample
-Download `youtube_comments_raw.csv` from the course Google Drive.
+**Tools Required:** Google Sheets (free with Google account)
+**Dataset:** Andrea's Reddit Data (from course dataset bank)
 
 ---
 
 ## Learning Goals
 By the end of this lab, you will:
-- Import a CSV file into Google Sheets
+- Import a CSV file into Google Sheets from a URL
 - Identify and remove missing values (NaN)
 - Remove duplicate rows
 - Standardize column headers
 - Identify variable types
+- Formulate a testable hypothesis
 
 ---
 
 ## Setup Instructions
 
-### Step 1: Access the Dataset
-1. Go to the course Google Drive folder
-2. Download `youtube_comments_raw.csv`
-3. Open Google Sheets (sheets.google.com)
-4. File > Import > Upload > Select the CSV
+### Step 1: Open Google Sheets
+1. Go to [sheets.google.com](https://sheets.google.com)
+2. Create a new blank spreadsheet
+3. Name it "Module 1 - Data Cleaning Practice"
 
-### Step 2: Initial Inspection
+### Step 2: Import the Dataset from Course Data Bank
+
+Google Sheets can import data directly from a URL. Use this link to Andrea's Reddit data:
+
+```
+https://storage.googleapis.com/variable-resolution-applied-computational-psychology-course/datasets/csv/andrea_reddit_results_andrea_2025_03_13.csv
+```
+
+**To import:**
+1. In Google Sheets: **File → Import**
+2. Click the **"Upload"** tab, then click **"Browse"**
+3. OR use **IMPORTDATA function** in cell A1:
+   ```
+   =IMPORTDATA("https://storage.googleapis.com/variable-resolution-applied-computational-psychology-course/datasets/csv/andrea_reddit_results_andrea_2025_03_13.csv")
+   ```
+
+**Note:** This dataset has 871,775 rows. Google Sheets may only load the first ~50,000. That's fine for learning!
+
+### Step 3: Initial Inspection
 Before cleaning, ALWAYS look at your data first.
 
 **Answer these questions:**
@@ -80,93 +54,112 @@ Before cleaning, ALWAYS look at your data first.
 
 ---
 
+## Understanding the Data
+
+Andrea collected Reddit posts about wedding conflicts. Here's what each column means:
+
+| Column | Description | Type |
+|--------|-------------|------|
+| Post Title | Title of the Reddit post | Text |
+| Post URL | Link to the original post | Text (ID) |
+| Post Score | Upvotes minus downvotes | Numeric |
+| Post Author | Reddit username | Text (ID) |
+| Post Num Comments | Number of comments | Numeric |
+| Post Body | Full text of the post | Text |
+| Post Created | When it was posted | Date/Time |
+| Comment Body | A comment on the post | Text |
+| Comment Score | Comment upvotes | Numeric |
+
+---
+
 ## Cleaning Tasks
 
-### Task 1: Fix Column Headers (10 minutes)
+### Task 1: Understand Rows vs Columns (5 minutes)
 
-**Problem:** The raw data has messy headers like "comment_txt", "VID_ID", "likes_count".
+**Key Concept: Tidy Data**
+- Each **row** = one observation (in this case, one comment on a post)
+- Each **column** = one variable (a property of that observation)
 
-**Your Goal:** Standardize to snake_case and make them descriptive.
-
-**Instructions:**
-1. Click on row 1 (the header row)
-2. Rename columns to:
-   - `video_id`
-   - `comment_text`
-   - `like_count`
-   - `reply_count`
-   - `published_date`
-   - `author_name`
-
-**Why this matters:** Consistent naming prevents errors when you write code later.
+**Your Task:**
+1. How many observations (rows) do you have?
+2. How many variables (columns) do you have?
+3. What is the "unit of analysis"? (What does each row represent?)
 
 ---
 
-### Task 2: Remove Missing Values (15 minutes)
+### Task 2: Identify Missing Values (15 minutes)
 
-**Problem:** Some cells are empty, contain "NaN", "N/A", or "#N/A".
+**Problem:** Some cells are empty or contain "NaN", "N/A", or blank values.
 
-**Your Goal:** Find and remove rows with critical missing data.
+**Your Goal:** Find and document missing data patterns.
 
 **Instructions:**
 
-**Method 1: Find & Replace**
-1. Edit > Find and replace (Ctrl/Cmd + H)
-2. Find: `NaN`
-3. Replace with: (leave empty)
-4. Click "Replace all"
-5. Repeat for: `N/A`, `#N/A`, `null`, `None`
+**Method 1: Visual Scan**
+1. Scroll through the data
+2. Look for empty cells, "NaN", or unusual values
 
 **Method 2: Filter for Blanks**
-1. Data > Create a filter
-2. Click the filter icon on a column
-3. Uncheck "Blanks" to hide empty rows
-4. Select visible rows > Right-click > Delete rows
+1. Data → Create a filter
+2. Click the filter icon on a column (e.g., "Comment Body")
+3. Look for "(Blanks)" option - how many are there?
 
-**Critical columns** (must have values):
-- `video_id`
-- `comment_text`
+**Document your findings:**
+| Column | Missing Values? | Notes |
+|--------|-----------------|-------|
+| Post Title | | |
+| Post Body | | |
+| Comment Body | | |
+| Post Score | | |
 
-**Non-critical columns** (can be empty):
-- `author_name`
-
----
-
-### Task 3: Remove Duplicate Rows (10 minutes)
-
-**Problem:** Some comments appear multiple times (scraped twice, API glitch, etc.)
-
-**Your Goal:** Keep only unique comments.
-
-**Instructions:**
-1. Data > Data cleanup > Remove duplicates
-2. Select columns to check: `video_id` AND `comment_text`
-   - (Two comments are duplicates if they're on the same video with the same text)
-3. Click "Remove duplicates"
-4. Note how many were removed!
+**Question:** Why might "Comment Body" have missing values while "Post Title" doesn't?
 
 ---
 
-### Task 4: Identify Variable Types (15 minutes)
+### Task 3: Identify Variable Types (15 minutes)
 
 **Your Goal:** Classify each column as a variable type.
 
-Fill out this table in a new sheet tab called "Variable_Types":
+Create a new sheet tab (click + at bottom) called "Variable_Types" and fill out:
 
-| Column Name | Variable Type | Notes |
-|-------------|---------------|-------|
-| video_id | Categorical (ID) | Unique identifier |
-| comment_text | Text (Unstructured) | Will convert to ratings later |
-| like_count | Continuous (Count) | Range: 0 to ? |
-| reply_count | Continuous (Count) | Range: 0 to ? |
-| published_date | Date/Time | Format: YYYY-MM-DD |
-| author_name | Categorical (Nominal) | Could anonymize |
+| Column Name | Variable Type | Example Value |
+|-------------|---------------|---------------|
+| Post Title | Text (Unstructured) | "AITA for not inviting..." |
+| Post Score | Continuous (Count) | 1523 |
+| Post Author | Categorical (ID) | "username123" |
+| Post Num Comments | Continuous (Count) | 87 |
+| Post Created | Date/Time | 2024-11-19 |
+| Comment Body | Text (Unstructured) | "NTA, your wedding your rules" |
+| Comment Score | Continuous (Count) | 234 |
 
 **Variable Type Definitions:**
-- **Categorical (Nominal):** Categories with no order (e.g., video_id, author)
-- **Categorical (Ordinal):** Categories with order (e.g., rating: low/medium/high)
-- **Continuous:** Numbers that can take any value (e.g., like_count, sentiment score)
-- **Text:** Unstructured text data
+- **Categorical (Nominal):** Categories with no order (e.g., username, subreddit)
+- **Categorical (Ordinal):** Categories WITH order (e.g., rating: low/medium/high)
+- **Continuous:** Numbers that can take any value (e.g., scores, counts)
+- **Text (Unstructured):** Free-form text that needs processing
+
+---
+
+### Task 4: Spot Structured vs Unstructured Data (10 minutes)
+
+**Key Insight for This Course:**
+
+Some columns are **structured** (ready for analysis):
+- Post Score (it's already a number!)
+- Comment Score
+- Post Num Comments
+
+Some columns are **unstructured** (need processing):
+- Post Body (raw text - how do you analyze this?)
+- Comment Body (raw text)
+
+**The Magic Question:** How do you turn "AITA for refusing to invite my sister to my wedding?" into a NUMBER you can analyze?
+
+This is what the rest of the course teaches:
+- Module 3: Use AI (LLMs) to rate the text
+- Module 5: Convert text to embeddings (vectors of numbers)
+
+**Your Task:** List 2 structured and 2 unstructured columns from this dataset.
 
 ---
 
@@ -178,9 +171,9 @@ Based on the variables available, write ONE testable hypothesis.
 > "We predict that [INDEPENDENT VARIABLE] will [increase/decrease] [DEPENDENT VARIABLE]."
 
 **Examples using this dataset:**
-- "We predict that comments with more likes will have more replies."
-- "We predict that longer comments will receive more likes."
-- "We predict that comments posted on weekends will receive fewer replies."
+- "We predict that posts with more comments will have higher post scores."
+- "We predict that longer post titles will receive more comments."
+- "We predict that comments on high-scoring posts will also have high scores."
 
 **Your Hypothesis:**
 _________________________________
@@ -194,46 +187,48 @@ _________________________________
 ## Submission Checklist
 
 ### Required Deliverables:
-1. **Screenshot 1:** Your cleaned data (first 20 rows visible)
-   - Show that headers are standardized
-   - Show no visible NaN values
+
+1. **Screenshot 1:** Your data in Google Sheets (first 15 rows visible)
+   - Show column headers clearly
 
 2. **Screenshot 2:** Your "Variable_Types" tab
 
-3. **Text Submission:**
-   - Your hypothesis (1 sentence)
-   - Your IV and DV
+3. **Written Answers:**
+   - How many rows/columns in your data?
+   - Which columns are structured vs unstructured?
+   - Your hypothesis with IV and DV labeled
 
 ---
 
 ## Troubleshooting
 
-**"I accidentally deleted too many rows!"**
-- File > Version history > See version history
-- Restore an earlier version
+**"IMPORTDATA won't load - too many rows"**
+- That's expected! The full dataset is 871K rows
+- Google Sheets has limits - working with the first 50K is fine for learning
 
 **"My dates look weird (like 45678)"**
-- Select the column > Format > Number > Date
+- Select the column → Format → Number → Date
 
-**"Find & Replace isn't finding my NaN values"**
-- Check for spaces: try finding " NaN" or "NaN "
-- Check for case: NaN vs nan vs NAN
+**"I see a lot of NaN values"**
+- That's part of the data - some posts don't have all fields
+- Document which columns have missing data (that's the exercise!)
 
 ---
 
-## Challenge Extension (Optional)
+## Key Takeaways
 
-**For students who finish early:**
+Before moving to Module 2, make sure you understand:
 
-1. Calculate basic statistics:
-   - What's the average like_count?
-   - What's the maximum reply_count?
-   - How many unique video_ids are there?
+1. **Rows = Observations, Columns = Variables**
+2. **Structured data** (numbers) is ready to analyze
+3. **Unstructured data** (text) needs processing first
+4. **A hypothesis** links an IV to a DV with a predicted direction
 
-2. Create a simple visualization:
-   - Highlight column > Insert > Chart
-   - Try a histogram of like_count
+---
 
-3. Identify potential outliers:
-   - Are there comments with suspiciously high like counts?
-   - Could these be bots or promotional content?
+## Next Steps
+
+In **Module 2**, you'll learn to:
+- Run linear regression on structured variables (like Post Score ~ Post Num Comments)
+- Interpret coefficients and p-values
+- This all happens in Python/Colab - no more Google Sheets!

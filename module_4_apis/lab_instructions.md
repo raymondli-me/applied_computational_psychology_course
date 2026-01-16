@@ -79,9 +79,9 @@ List 3-5 keywords or phrases for your topic:
 4. _______________________
 5. _______________________
 
-### Step 3: Open the Notebook
-1. Open Google Colab
-2. Upload `03_data_collection_boilerplate.ipynb`
+### Step 3: Open the Course Notebook
+1. Open your course notebook in Colab (the one you saved in Module 1)
+2. Add a new section for "Module 4 - API Collection"
 
 ---
 
@@ -415,7 +415,7 @@ Fill out this information for your Methods section:
    - How many of your 10 random samples were relevant? ___/10
    - If low, what keyword changes would you make?
 
-4. **Saved CSV file:** Upload to course platform
+4. **Saved CSV file:** Keep in your Colab environment for future modules
 
 ---
 

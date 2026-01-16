@@ -58,15 +58,19 @@ By the end of this lab, you will:
 
 ## Setup Instructions
 
-### Step 1: Open Notebook
-1. Open Google Colab
-2. Upload `05_visualization_boilerplate.ipynb`
-3. Upload your files from Module 5:
-   - `embeddings.npy`
-   - `data_with_embedding_index.csv`
+### Step 1: Open the Course Notebook
+1. Open your course notebook in Colab
+2. Make sure you've run the setup cell with `load_dataset()`
+3. Load pre-computed UMAP data from the course dataset bank:
 
-### Step 2: Prepare Your Rating Data (Optional)
-If you have AI ratings from Module 3, upload that file too for coloring.
+```python
+# Raymond's pre-computed UMAP results - ready to visualize!
+df = load_dataset("raymond_umap_dbscan_results_20250223_154628", nrows=10000)
+print(f"Columns: {list(df.columns)}")
+```
+
+### Step 2: Verify Data Has UMAP Coordinates
+Your data should have columns like `umap_x`, `umap_y`, and optionally `cluster`.
 
 ---
 
@@ -400,13 +404,10 @@ print("Saved: data_with_umap_coords.csv")
 np.save('umap_coordinates.npy', embeddings_umap)
 print("Saved: umap_coordinates.npy")
 
-# Download files (Colab)
-from google.colab import files
-files.download('umap_basic.png')
-files.download('umap_clusters.png')
-files.download('data_with_umap_coords.csv')
+# Files are saved in Colab's /content/ folder
+# Right-click files in the left panel to download if needed
 
-print("\nAll files ready for submission!")
+print("\nVisualization complete! Check the left panel for saved files.")
 ```
 
 ---
@@ -427,7 +428,7 @@ print("\nAll files ready for submission!")
 3. **Interpretation (3-4 sentences):**
    What does your visualization reveal about the structure of your data? Are there surprising groupings?
 
-4. **Saved Files:** Upload to course platform
+4. **Saved Files:** Confirm plots are visible in your notebook output
 
 ---
 
