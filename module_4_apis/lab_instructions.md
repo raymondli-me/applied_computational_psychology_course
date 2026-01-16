@@ -3,7 +3,7 @@
 ## Lab Overview
 **Duration:** 60 minutes
 **Tools Required:** Google Colab, API access (provided)
-**Notebook:** `03_data_collection_boilerplate.ipynb`
+**Notebook:** Continue in your course notebook from previous modules
 
 ---
 

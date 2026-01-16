@@ -4,7 +4,7 @@
 **Duration:** 60 minutes
 **Tools Required:** Google Colab, HuggingFace sentence-transformers
 **Dataset:** Choose from course dataset bank (see below)
-**Notebook:** `04_embeddings_boilerplate.ipynb`
+**Notebook:** Continue in your course notebook from previous modules
 
 ---
 

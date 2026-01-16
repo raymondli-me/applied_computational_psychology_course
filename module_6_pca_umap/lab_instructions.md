@@ -4,16 +4,16 @@
 **Duration:** 60 minutes
 **Tools Required:** Google Colab, umap-learn, matplotlib
 **Input:** Pre-computed PCA/UMAP from course dataset bank (see below)
-**Notebook:** `05_visualization_boilerplate.ipynb`
+**Notebook:** Continue in your course notebook from previous modules
 
 ---
 
 ## Dataset Options for This Lab
 
-### Recommended: Winnie's UMAP Clusters (Ready to Visualize)
+### Recommended: Pre-computed UMAP Clusters (Ready to Visualize)
 
 ```python
-# === DATASET LOADER ===
+# If you haven't run the setup cell yet:
 import pandas as pd, json, urllib.request
 GCS_BUCKET = "variable-resolution-applied-computational-psychology-course"
 CATALOG_URL = f"https://storage.googleapis.com/{GCS_BUCKET}/manifest.json"
@@ -26,13 +26,13 @@ def load_dataset(name, nrows=None):
             return pd.read_csv(ds['access']['public_url'], nrows=nrows)
     raise ValueError(f"Dataset '{name}' not found")
 
-# Winnie's UMAP results - 82,127 comments with cluster labels
+# Raymond's UMAP results - pre-computed with cluster labels
 # Ready to visualize immediately!
-df = load_dataset("winnie_umap_dbscan_results_20250223_154628")
+df = load_dataset("raymond_umap_dbscan_results_20250223_154628", nrows=10000)
 print(f"Columns: {list(df.columns)}")
 ```
 
-*Winnie processed 26 million YouTube comments through UMAP and DBSCAN clustering. Explore her visualization and interpretation.*
+*These UMAP results were computed from YouTube comments and include cluster labels for visualization.*
 
 ### Alternative: PCA Component Analysis
 

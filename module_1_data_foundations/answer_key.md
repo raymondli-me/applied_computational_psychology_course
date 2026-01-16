@@ -2,7 +2,7 @@
 ## INSTRUCTOR USE ONLY
 
 **Assessment:** Module 1 Assessment
-**Dataset:** `andrea_reddit_results_andrea_2025_03_13`
+**Dataset:** `andrea_sample_2k_for_sheets` (2,000 row sample in Google Sheets)
 **Total Points:** 100
 
 ---
@@ -77,7 +77,7 @@
 
 **Expected Data Info (for reference):**
 ```
-Full dataset: 871,775 rows x 16 columns
+Sample dataset: 2,000 rows x 16 columns (in Google Sheets)
 Columns: Post Title, Post URL, Post Score, Post Author, Post Num Comments,
          Post Body, Media URL, Post Created, Comment Body, Comment Author,
          Comment Score, Comment Created, Reply Body, Reply Author,
@@ -221,28 +221,19 @@ df['subreddit'] = df['Post URL'].str.extract(r'/r/([^/]+)/')
 
 ---
 
-## Expected Code Output Reference
+## Expected Google Sheets Output Reference
 
-When students run the data loader:
-```python
-df = load_dataset("andrea_reddit_results_andrea_2025_03_13", nrows=5000)
-print(f"Loaded {len(df):,} rows with columns: {list(df.columns)}")
+When students load the data via IMPORTDATA:
 ```
-
-**Expected Output:**
-```
-Loaded 5,000 rows with columns: ['Post Title', 'Post URL', 'Post Score', 'Post Author',
-'Post Num Comments', 'Post Body', 'Media URL', 'Post Created', 'Comment Body',
-'Comment Author', 'Comment Score', 'Comment Created', 'Reply Body', 'Reply Author',
-'Reply Score', 'Reply Created']
+=IMPORTDATA("https://storage.googleapis.com/.../andrea_sample_2k_for_sheets.csv")
 ```
 
-**Descriptive Stats (for grading Task 2):**
-```
-Post Score: mean=14,463, std=2,100
-Post Num Comments: mean=2,173, std=461
-Comment Score: mean=1,880, std=5,213
-```
+**Expected Result:**
+- 2,000 rows loaded
+- 16 columns visible
+- Column headers in row 1
+
+**Note:** Module 1 uses Google Sheets only. Python/Colab starts in Module 2.
 
 ---
 
